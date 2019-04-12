@@ -18,8 +18,26 @@
 
 #endregion
 
+#region Sequential (No optimization)
+#Prep
+if (Test-Path -Path $SCRIPTTEMP -PathType Container) {
+    Get-ChildItem -Path $SCRIPTTEMP | Remove-Item -Recurse -Force -Confirm:$false
+} else {
+    New-Item -Path $SCRIPTTEMP -ItemType Directory
+}
 
-#region Job
+#Download
+$SequentialTime = Measure-Command {
+    for ($i = 0; $i -lt 30; $i++) {
+        $wc = New-Object System.Net.WebClient
+        Start-Sleep -Seconds 5
+        #$wc.DownloadFile("$($args[1])5M_$($i).dum", "$($args[0])5M_$($i).dum")
+        Write-Host "$($DlRoot)5M_$($i).dum"
+    }
+}
+#endregion
+
+#region Jobs
 #Prep
 if (Test-Path -Path $SCRIPTTEMP -PathType Container) {
     Get-ChildItem -Path $SCRIPTTEMP | Remove-Item -Recurse -Force -Confirm:$false
@@ -29,16 +47,48 @@ if (Test-Path -Path $SCRIPTTEMP -PathType Container) {
 
 #Job
 $JobTime = Measure-Command {
-    $Job = Start-Job -Name "DemoJob" -ArgumentList @($SCRIPTTEMP, $DLROOT) -ScriptBlock {
-        Set-Location $args[0]
-        for ($i = 0; $i -lt 30; $i++) {
+    $ActiveJobs = New-Object System.Collections.ArrayList
+    for ($i = 0; $i -lt 10; $i++) {
+        $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($SCRIPTTEMP, $DLROOT) -ScriptBlock {
             $wc = New-Object System.Net.WebClient
             Start-Sleep -Seconds 5
             #$wc.DownloadFile("$($args[1])5M_$($i).dum", "$($args[0])5M_$($i).dum")
-            Write-Host "$($Using:DlRoot)5M_$($Using:i).dum"
+            Write-Host "$($args[1])5M_$($args[0]).dum"
         }
+        $ActiveJobs.Add($Job)
     }
-    Wait-Job -Job $Job
+    foreach ($job in $ActiveJobs) {
+        Wait-Job $job
+    }
+    $ActiveJobs.Clear()
+
+    for ($i = 10; $i -lt 20; $i++) {
+        $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($SCRIPTTEMP, $DLROOT) -ScriptBlock {
+            $wc = New-Object System.Net.WebClient
+            Start-Sleep -Seconds 5
+            #$wc.DownloadFile("$($args[1])5M_$($i).dum", "$($args[0])5M_$($i).dum")
+            Write-Host "$($args[1])5M_$($args[0]).dum"
+        }
+        $ActiveJobs.Add($Job)
+    }
+    foreach ($job in $ActiveJobs) {
+        Wait-Job $job
+    }
+    $ActiveJobs.Clear()
+
+    for ($i = 20; $i -lt 30; $i++) {
+        $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($SCRIPTTEMP, $DLROOT) -ScriptBlock {
+            $wc = New-Object System.Net.WebClient
+            Start-Sleep -Seconds 5
+            #$wc.DownloadFile("$($args[1])5M_$($i).dum", "$($args[0])5M_$($i).dum")
+            Write-Host "$($args[1])5M_$($args[0]).dum"
+        }
+        $ActiveJobs.Add($Job)
+    }
+    foreach ($job in $ActiveJobs) {
+        Wait-Job $job
+    }
+    $ActiveJobs.Clear()
 }
 #endregion
 
@@ -131,4 +181,11 @@ $RunspaceTime = Measure-Command {
 
     ($return | Group Thread).Count
 }
+#endregion
+
+#region Compare Results
+Write-Host ([string]::Format("Sequential Execution:  {0:00}:{1:00}.{2} ({3:00.00}%)", $SequentialTime.Minutes, $SequentialTime.Seconds, $SequentialTime.Milliseconds, (($SequentialTime.TotalMilliseconds/$SequentialTime.TotalMilliseconds) * 100)))
+Write-Host ([string]::Format("Jobs Execution:        {0:00}:{1:00}.{2} ({3:00.00}%)", $JobTime.Minutes, $JobTime.Seconds, $JobTime.Milliseconds, (($JobTime.TotalMilliseconds/$SequentialTime.TotalMilliseconds) * 100)))
+Write-Host ([string]::Format("Workflow Execution:    {0:00}:{1:00}.{2} ({3:00.00}%)", $WorkflowTime.Minutes, $WorkflowTime.Seconds, $WorkflowTime.Milliseconds, (($WorkflowTime.TotalMilliseconds/$SequentialTime.TotalMilliseconds) * 100)))
+Write-Host ([string]::Format("Runspace Execution:    {0:00}:{1:00}.{2} ({3:00.00}%)", $RunspaceTime.Minutes, $RunspaceTime.Seconds, $RunspaceTime.Milliseconds, (($RunspaceTime.TotalMilliseconds/$SequentialTime.TotalMilliseconds) * 100)))
 #endregion
