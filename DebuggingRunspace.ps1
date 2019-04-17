@@ -5,7 +5,7 @@ $Variable = [System.Management.Automation.Runspaces.SessionStateVariableEntry]::
 $initialSessionState.Variables.Add($Variable)
 
 $Runspace = [RunspaceFactory]::CreateRunspace($Host,$initialSessionState)
-$Runspace.ThreadOptions = ''
+#$Runspace.ThreadOptions = ''
 $Runspace.Open()
 
 $PowerShell = [PowerShell]::Create()
@@ -18,6 +18,7 @@ $ScriptBlock = {
 }
 $Null = $PowerShell.AddScript($ScriptBlock)
 $Null = $PowerShell.BeginInvoke()
+Debug-Runspace -Runspace $RunSpace
 $hash
 #endregion
 
