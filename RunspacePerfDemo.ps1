@@ -12,125 +12,91 @@
     .LINK
 #>
 
-#region Variables
-    $SCRIPTTEMP = 'C:\Windows\Temp\RunspacePerfDemo\'
-    $DLROOT = "https://github.com/DumpsterDave/MMS2019/raw/master/DummyFiles/"
 
-#endregion
 
 #region Sequential (No optimization)
-#Prep
-if (Test-Path -Path $SCRIPTTEMP -PathType Container) {
-    Get-ChildItem -Path $SCRIPTTEMP | Remove-Item -Recurse -Force -Confirm:$false
-} else {
-    New-Item -Path $SCRIPTTEMP -ItemType Directory
-}
-
-#Download
+#Wait for 5 seconds 30 times
+Clear-Host
+Write-Host "This Process ID is $($pid)" -ForegroundColor White -BackgroundColor Black
 $SequentialTime = Measure-Command {
     for ($i = 0; $i -lt 30; $i++) {
-        $wc = New-Object System.Net.WebClient
         Start-Sleep -Seconds 5
-        #$wc.DownloadFile("$($args[1])5M_$($i).dum", "$($args[0])5M_$($i).dum")
-        Write-Host "$($DlRoot)5M_$($i).dum"
+        Write-Host "Processing $($i) has completed" -ForegroundColor Magenta
     }
 }
 #endregion
 
 #region Jobs
-#Prep
-if (Test-Path -Path $SCRIPTTEMP -PathType Container) {
-    Get-ChildItem -Path $SCRIPTTEMP | Remove-Item -Recurse -Force -Confirm:$false
-} else {
-    New-Item -Path $SCRIPTTEMP -ItemType Directory
-}
-
-#Job
 $JobTime = Measure-Command {
     $ActiveJobs = New-Object System.Collections.ArrayList
+    $AllJobs = New-Object System.Collections.ArrayList
+
     for ($i = 0; $i -lt 10; $i++) {
-        $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($SCRIPTTEMP, $DLROOT) -ScriptBlock {
-            $wc = New-Object System.Net.WebClient
+        $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($i) -ScriptBlock {
             Start-Sleep -Seconds 5
-            #$wc.DownloadFile("$($args[1])5M_$($i).dum", "$($args[0])5M_$($i).dum")
-            Write-Host "$($args[1])5M_$($args[0]).dum"
+            Write-Host "Processing of Job_$($args[0]) with pid $($pid) completed." -ForegroundColor Cyan #Note: Since this is a job, this output will not be visible until we run Receive-Job
         }
         $ActiveJobs.Add($Job)
+        $AllJobs.Add($Job)
     }
     foreach ($job in $ActiveJobs) {
         Wait-Job $job
+        Receive-Job $job
     }
     $ActiveJobs.Clear()
 
     for ($i = 10; $i -lt 20; $i++) {
-        $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($SCRIPTTEMP, $DLROOT) -ScriptBlock {
-            $wc = New-Object System.Net.WebClient
+        $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($i) -ScriptBlock {
             Start-Sleep -Seconds 5
-            #$wc.DownloadFile("$($args[1])5M_$($i).dum", "$($args[0])5M_$($i).dum")
-            Write-Host "$($args[1])5M_$($args[0]).dum"
+            Write-Host "Processing of Job_$($args[0]) with pid $($pid) completed." -ForegroundColor Cyan
         }
         $ActiveJobs.Add($Job)
+        $AllJobs.Add($Job)
     }
     foreach ($job in $ActiveJobs) {
         Wait-Job $job
+        Receive-Job $job
     }
     $ActiveJobs.Clear()
 
     for ($i = 20; $i -lt 30; $i++) {
-        $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($SCRIPTTEMP, $DLROOT) -ScriptBlock {
-            $wc = New-Object System.Net.WebClient
+        $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($i) -ScriptBlock {
             Start-Sleep -Seconds 5
-            #$wc.DownloadFile("$($args[1])5M_$($i).dum", "$($args[0])5M_$($i).dum")
-            Write-Host "$($args[1])5M_$($args[0]).dum"
+            Write-Host "Processing of Job_$($args[0]) with pid $($pid) completed." -ForegroundColor Cyan
         }
         $ActiveJobs.Add($Job)
+        $AllJobs.Add($Job)
     }
     foreach ($job in $ActiveJobs) {
         Wait-Job $job
+        Receive-Job $job
     }
     $ActiveJobs.Clear()
 }
+
 #endregion
 
 #region workflow
-#prep
-if (Test-Path -Path $SCRIPTTEMP -PathType Container) {
-    Get-ChildItem -Path $SCRIPTTEMP | Remove-Item -Recurse -Force -Confirm:$false
-} else {
-    New-Item -Path $SCRIPTTEMP -ItemType Directory
-}
-
-#Workflow
+$host.ui.RawUI.ForegroundColor = 14 #Yellow
 $WorkflowTime = Measure-Command {
-    Workflow Download-Files {
-        Param(
-            [string]$ScriptTemp,
-            [string]$DlRoot
-        )
+    Workflow Test-Workflow{
 
         $ints = 0..29
-        ForEach -Parallel -ThrottleLimit 10 ($i in $ints) {
-            InlineScript {
-                $wc = New-Object System.Net.WebClient
+        ForEach -Parallel -ThrottleLimit 10 ($i in $ints) {  #This is a thread
+            InlineScript {  #This is a process
                 Start-Sleep -Seconds 5
-                #$wc.DownloadFile("$($Using:DlRoot)5M_$($Using:i).dum", "$($Using:ScriptTemp)5M_$($Using:i).dum")
-                Write-Host "$($Using:DlRoot)5M_$($Using:i).dum"
+                Write-Host "Workflow_$($using:i) with Process ID $($pid) has completed." -ForegroundColor Yellow  #Will not show color because the workflow is only returning the text to the 
             }
+            Start-Sleep -Seconds 1
         }
     }
 
-    Download-Files -ScriptTemp $SCRIPTTEMP -DlRoot $DLROOT
+    Test-Workflow
 }
+$host.ui.RawUI.ForegroundColor = 15 #White
 #endregion
 
 #region Runspace
-#prep
-if (Test-Path -Path $SCRIPTTEMP -PathType Container) {
-    Get-ChildItem -Path $SCRIPTTEMP | Remove-Item -Recurse -Force -Confirm:$false
-} else {
-    New-Item -Path $SCRIPTTEMP -ItemType Directory
-}
-#Runspace
 $RunspaceTime = Measure-Command {
     #region Runspace Pool
     [runspacefactory]::CreateRunspacePool()
@@ -142,42 +108,45 @@ $RunspaceTime = Measure-Command {
     #endregion
 
     #region Runspaces
-    $Jobs = [System.Collections.ArrayList]::new()
+    $Spaces = [System.Collections.ArrayList]::new()
     for ($i = 0; $i -lt 30; $i++) {
         $PowerShell = [powershell]::Create()
+        $PowerShell.Runspace.Name = "Runspace_$($i)"
         $PowerShell.RunspacePool = $RunspacePool
         $PowerShell.AddScript({
             Param(
-                [string]$TempDir,
-                [string]$DL
+                [string]$Param1,
+                [int]$Param2
             )
-            $wc = New-Object System.Net.WebClient
             Start-Sleep -Seconds 5
-            #$wc.DownloadFile("$($Dl)5M_$($i).dum", "$($TempDir)5M_$($TempDir).dum")
-            Write-Host "$($DL)5M_$($i).dum"
+            Write-Host "WH Runspace_$($Param2) with Process ID $($pid) has completed"  #Will NOT return output via EndInvoke
+            Write-Output "Runspace_$($Param2) with Process ID $($pid) has completed"  #Will return output via EndInvoke
         })
+
         $Parameters = @{
-            TempDir = $SCRIPTTEMP;
-            DL = $DLROOT;
+            Param1 = "Runspace_$($i)";
+            Param2 = $i;
         }
         [void]$PowerShell.AddParameters($Parameters)
+
         $Handle = $PowerShell.BeginInvoke()
         
         $temp = '' | Select PowerShell,Handle
         $temp.PowerShell = $PowerShell
         $temp.handle = $Handle
-        [void]$jobs.Add($Temp)
+        [void]$Spaces.Add($Temp)
 
         $RunspacePool.GetAvailableRunspaces()
     }
     #endregion
     
-    $return = foreach ($job in $jobs) {
-        $job.PowerShell.EndInvoke($job.Handle)
-        $job.PowerShell.Dispose()
+    $return = foreach ($rs in $Spaces) {
+        $output = $rs.PowerShell.EndInvoke($rs.Handle)
+        Write-Host $output -ForegroundColor Green
+        $rs.PowerShell.Dispose()
     }
 
-    $jobs.clear()
+    $Spaces.clear()
 
     ($return | Group Thread).Count
 }
