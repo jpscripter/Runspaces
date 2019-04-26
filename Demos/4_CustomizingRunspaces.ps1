@@ -41,3 +41,22 @@ $Null = $PowerShell.AddScript($ScriptBlock)
 $Null = $PowerShell.BeginInvoke()
 $hash
 #endregion
+
+#region
+$RunspacePool = [RunspaceFactory]::CreateRunspacePool(1,3,$initialSessionState,$host)
+$RunspacePool.Open()
+$hash['name'] = 'New value'
+$PowerShell = [PowerShell]::Create()
+$PowerShell.RunspacePool = $RunspacePool
+$ScriptBlock = {
+    $VerbosePreference = 2
+    Write-Verbose "Startup = $startup"
+    Write-Verbose $SyncHash['name']
+    $SyncHash['name'] = 'Changed'
+    Write-Verbose $SyncHash['name']
+    start-sleep -Seconds 3 
+}
+$Null = $PowerShell.AddScript($ScriptBlock)
+$Null = $PowerShell.BeginInvoke()
+$hash
+#endregion

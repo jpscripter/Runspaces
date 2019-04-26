@@ -32,7 +32,7 @@ $JobTime = Measure-Command {
     $AllJobs = New-Object System.Collections.ArrayList
 
     for ($i = 0; $i -lt 10; $i++) {
-        $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($i) -ScriptBlock {
+        $Job = Start-Job - -Name "Job_$($i)" -ArgumentList @($i) -ScriptBlock {
             Start-Sleep -Seconds 5
             Write-Host "Processing of Job_$($args[0]) with pid $($pid) completed." -ForegroundColor Cyan #Note: Since this is a job, this output will not be visible until we run Receive-Job
         }
@@ -100,10 +100,7 @@ $host.ui.RawUI.ForegroundColor = 15 #White
 $RunspaceTime = Measure-Command {
     #region Runspace Pool
     [runspacefactory]::CreateRunspacePool()
-    $SessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
     $RunspacePool = [runspacefactory]::CreateRunspacePool(1, 10)
-    $PowerShell = [powershell]::Create()
-    $PowerShell.RunspacePool = $RunspacePool
     $RunspacePool.Open()
     #endregion
 

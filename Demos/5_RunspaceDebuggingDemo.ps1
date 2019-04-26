@@ -19,13 +19,13 @@ Get-Runspace
 $ps = [powershell]::Create()
 $ps.Runspace.Name = "DebugExample1"
 $ps.AddScript({
-    for ($i = 1; $i -lt 31; $i++) {
+    for ($i = 1; $i -lt 8; $i++) {
         Start-Sleep -Seconds 1
+        #Wait-debugger
         Write-Output "I have slept for $($i) seconds"
     }
 })
 $async = $ps.BeginInvoke()
-Start-Sleep -Seconds 5
 Debug-Runspace DebugExample1
 $ps.EndInvoke($async)
 $ps.Dispose()

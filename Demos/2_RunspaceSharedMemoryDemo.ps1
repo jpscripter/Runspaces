@@ -19,8 +19,7 @@ $HashTable = [hashtable]::Synchronized(@{})
 $x = 5
 
 [runspacefactory]::CreateRunspacePool()
-$SessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
-$RunspacePool = [runspacefactory]::CreateRunspacePool(1, 10)
+$RunspacePool = [runspacefactory]::CreateRunspacePool(1, 5)
 [void]$RunspacePool.Open()
 #endregion
 
@@ -47,7 +46,7 @@ function Show-Variables {
 #region Runspaces
 Show-Variables -Before
 
-for ($i = 0; $i -lt 30; $i++) {
+for ($i = 0; $i -lt 5; $i++) {
     $Runspace = [runspacefactory]::CreateRunspace()
     [void]$Runspace.Open()
     $Runspace.Name = "Runspace_$($i)"
