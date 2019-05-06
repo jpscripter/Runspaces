@@ -1,4 +1,18 @@
-﻿#region Initial State
+﻿<#
+    .SYNOPSIS
+    PowerShell Runspace Tricks
+
+    .DESCRIPTION
+    Demonstrates PowerShell Runspace examples with a few tricks
+
+    .NOTES
+    File Name:    TricksAndFeatures.ps1
+    Author:       Jeff Scripter JPScripter@gmail.com
+    
+    .LINK
+#>
+
+#region Initial State
 $initialSessionState = [initialsessionstate]::CreateDefault() # Enter PSSnapins here
 $initialSessionState.LanguageMode = 'Full'
 $initialSessionState.ExecutionPolicy = 'bypass'

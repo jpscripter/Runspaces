@@ -1,3 +1,17 @@
+<#
+    .SYNOPSIS
+    PowerShell Runspace Customization
+
+    .DESCRIPTION
+    Demonstrates PowerShell Runspace examples with adding customizations to runspaces.
+
+    .NOTES
+    File Name:    CustomizingRunspaces.ps1
+    Author:       Jeff Scripter JPScripter@gmail.com
+    
+    .LINK
+#>
+
 #region Initial State
 $initialSessionState = [initialsessionstate]::CreateDefault() # Enter PSSnapins here
 $initialSessionState.LanguageMode = 'Full'

@@ -1,3 +1,18 @@
+<#
+    .SYNOPSIS
+    PowerShell Runspace Simple runspace examples
+
+    .DESCRIPTION
+    Demonstrates PowerShell Runspace objects and examples
+
+    .NOTES
+    File Name:    SimpleRunspace.ps1
+    Author:       Jeff Scripter JPScripter@gmail.com
+    
+    .LINK
+#>
+
+
 #region Initial State
 $initialSessionState = [initialsessionstate]::CreateDefault() # Enter PSSnapins here
 #endregion
@@ -21,8 +36,8 @@ $hash = @{}
 For ($Counter = 0; $Counter -lt 10; $counter++){
   #region Basic
     $PowerShell = [PowerShell]::Create()
-    $PowerShell.Runspacepool = $RunSpacePool
-    #$PowerShell.Runspace = $RunSpace
+    #$PowerShell.Runspacepool = $RunSpacePool
+    $PowerShell.Runspace = $RunSpace
     
     $ScriptBlock = {
         $Process = Start-Process $Env:comspec -PassThru 
@@ -39,4 +54,5 @@ For ($Counter = 0; $Counter -lt 10; $counter++){
   $Counter
   #endregion
 }
+$hash.values.invocationstateinfo
 
