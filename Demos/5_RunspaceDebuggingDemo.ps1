@@ -131,7 +131,6 @@ $ps.AddScript({
     }
 })
 $async = $ps.BeginInvoke()
-Debug-Runspace DebugExample4
 $ps.EndInvoke($async)
 
 #The error stream is empty
@@ -151,7 +150,7 @@ $ps.InvocationStateInfo.Reason
 
 #region 8 Fatal Errors are not included in STDERR.  But they can be trapped!
 $ps = [powershell]::Create()
-$ps.Runspace.Name = "DebugExample5"
+$ps.Runspace.Name = "DebugExample10"
 $ps.AddScript({
     for ($i = 1; $i -lt 3; $i++) {
         Start-Sleep -Seconds 1
@@ -166,7 +165,7 @@ $ps.AddScript({
     }
 })
 $async = $ps.BeginInvoke()
-Debug-Runspace DebugExample5
+Debug-Runspace DebugExample10
 $ps.EndInvoke($async)
 $ps.Streams
 $ps.Streams.Error

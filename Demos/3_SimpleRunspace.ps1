@@ -36,8 +36,8 @@ $hash = @{}
 For ($Counter = 0; $Counter -lt 10; $counter++){
   #region Basic
     $PowerShell = [PowerShell]::Create()
-    #$PowerShell.Runspacepool = $RunSpacePool
-    $PowerShell.Runspace = $RunSpace
+    $PowerShell.Runspacepool = $RunSpacePool
+    #$PowerShell.Runspace = $RunSpace
     
     $ScriptBlock = {
         $Process = Start-Process $Env:comspec -PassThru 
