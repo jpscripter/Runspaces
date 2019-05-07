@@ -20,7 +20,7 @@ Clear-Host
 Write-Host "This Process ID is $($pid)" -ForegroundColor White -BackgroundColor Black
 $SequentialTime = Measure-Command {
     for ($i = 0; $i -lt 30; $i++) {
-        Start-Sleep -Seconds 5
+        Start-Sleep -Seconds 1
         Write-Host "Processing $($i) has completed" -ForegroundColor Magenta
     }
 }
@@ -32,8 +32,8 @@ $JobTime = Measure-Command {
     $AllJobs = New-Object System.Collections.ArrayList
 
     for ($i = 0; $i -lt 10; $i++) {
-        $Job = Start-Job - -Name "Job_$($i)" -ArgumentList @($i) -ScriptBlock {
-            Start-Sleep -Seconds 5
+        $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($i) -ScriptBlock {
+            Start-Sleep -Seconds 1
             Write-Host "Processing of Job_$($args[0]) with pid $($pid) completed." -ForegroundColor Cyan #Note: Since this is a job, this output will not be visible until we run Receive-Job
         }
         $ActiveJobs.Add($Job)
@@ -47,7 +47,7 @@ $JobTime = Measure-Command {
 
     for ($i = 10; $i -lt 20; $i++) {
         $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($i) -ScriptBlock {
-            Start-Sleep -Seconds 5
+            Start-Sleep -Seconds 1
             Write-Host "Processing of Job_$($args[0]) with pid $($pid) completed." -ForegroundColor Cyan
         }
         $ActiveJobs.Add($Job)
@@ -61,7 +61,7 @@ $JobTime = Measure-Command {
 
     for ($i = 20; $i -lt 30; $i++) {
         $Job = Start-Job -Name "Job_$($i)" -ArgumentList @($i) -ScriptBlock {
-            Start-Sleep -Seconds 5
+            Start-Sleep -Seconds 1
             Write-Host "Processing of Job_$($args[0]) with pid $($pid) completed." -ForegroundColor Cyan
         }
         $ActiveJobs.Add($Job)
@@ -84,10 +84,9 @@ $WorkflowTime = Measure-Command {
         $ints = 0..29
         ForEach -Parallel -ThrottleLimit 10 ($i in $ints) {  #This is a thread
             InlineScript {  #This is a process
-                Start-Sleep -Seconds 5
+                Start-Sleep -Seconds 1
                 Write-Host "Workflow_$($using:i) with Process ID $($pid) has completed." -ForegroundColor Yellow  #Will not show color because the workflow is only returning the text to the 
             }
-            Start-Sleep -Seconds 1
         }
     }
 
@@ -101,6 +100,8 @@ $RunspaceTime = Measure-Command {
     #region Runspace Pool
     [runspacefactory]::CreateRunspacePool()
     $RunspacePool = [runspacefactory]::CreateRunspacePool(1, 10)
+    $PowerShell = [powershell]::Create()
+    $PowerShell.RunspacePool = $RunspacePool
     $RunspacePool.Open()
     #endregion
 
@@ -115,7 +116,7 @@ $RunspaceTime = Measure-Command {
                 [string]$Param1,
                 [int]$Param2
             )
-            Start-Sleep -Seconds 5
+            Start-Sleep -Seconds 1
             Write-Host "WH Runspace_$($Param2) with Process ID $($pid) has completed"  #Will NOT return output via EndInvoke
             Write-Output "Runspace_$($Param2) with Process ID $($pid) has completed"  #Will return output via EndInvoke
         })

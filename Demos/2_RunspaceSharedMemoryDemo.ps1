@@ -1,4 +1,4 @@
-﻿<#
+<#
     .SYNOPSIS
     PowerShell Runspace Shared Memory Demo
 
@@ -15,13 +15,15 @@
 $Spaces = [System.Collections.ArrayList]::new()
 
 #Shared Memory Example Variables
-$HashTable = [hashtable]::Synchronized(@{})
-$x = 5
+$SHashTable = [hashtable]::Synchronized(@{0=0;1=1;2=2;3=3;4=4;})
+$AHashTable = [hashtable]::new(@{0=0;1=1;2=2;3=3;4=4;})
+$Array = @(0,1,2,3,4)
 
 [runspacefactory]::CreateRunspacePool()
+#$SessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
 $RunspacePool = [runspacefactory]::CreateRunspacePool(1, 5)
 [void]$RunspacePool.Open()
-#endregion
+
 
 function Show-Variables {
     Param(
@@ -36,11 +38,22 @@ function Show-Variables {
         $z = [ConsoleColor]::Red
     }
 
-    Write-Host "$($y)`nHASH TABLE:" -ForegroundColor $z
-    foreach ($key in $HashTable.Keys) {
-        Write-Host "$($Key): $($HashTable.Item($Key))" -ForegroundColor $z
+    Write-Host $y -ForegroundColor $z
+
+    Write-Host "SYNCHRONIZED HASH TABLE:" -ForegroundColor $z
+    foreach ($key in $SHashTable.Keys) {
+        Write-Host "$($Key): $($SHashTable.Item($Key))" -ForegroundColor $z
     }
-    Write-Host "X: $($x)" -foregroundColor $z
+
+    Write-Host "HASH TABLE:" -ForegroundColor $z
+    foreach ($key in $AHashTable.Keys) {
+        Write-Host "$($Key): $($AHashTable.Item($Key))" -ForegroundColor $z
+    }
+
+    Write-Host "ARRAY:" -ForegroundColor $z
+    foreach ($item in $Array) {
+        Write-Host $item -ForegroundColor $z
+    }
 }
 
 #region Runspaces
@@ -50,33 +63,41 @@ for ($i = 0; $i -lt 5; $i++) {
     $Runspace = [runspacefactory]::CreateRunspace()
     [void]$Runspace.Open()
     $Runspace.Name = "Runspace_$($i)"
-    #$Runspace.SessionStateProxy.SetVariable('Hash', $HashTable)  #This is used for a single runspace
     $PowerShell = [powershell]::Create()
     $PowerShell.Runspace = $Runspace
     $PowerShell.RunspacePool = $RunspacePool
     [void]$PowerShell.AddScript({
         Param(
-            [string]$Param1,
-            [int]$Param2,
-            [hashtable]$Param3,
-            [int]$Param4
+            [int]$Counter,
+            [hashtable]$SyncHashTable,
+            [hashtable]$HashTable,
+            [int[]]$Array
         )
-        $Param3[$Param2] = $Param1
-        Write-Output "$$x is $($Param4)`n"
-        $Param4 = (Get-Date).Millisecond
-        Write-Output "$$x is now $($Param4)"
+        $NewValue = (Get-Date).Millisecond
+        Write-Output "Setting index $($Counter) to $($NewValue)`n"
+
+        #Set the values
+        $SyncHashTable[$Counter] = $NewValue
+        $HashTable[$Counter] = $NewValue
+        $Array[$Counter] = $NewValue
+
+        #Read the values back
+        Write-Output "`$SyncHashTable[$($Counter)] is $($SyncHashTable[$Counter])`n"
+        Write-Output "`$HashTable[$($Counter)] is $($HashTable[$Counter])`n"
+        Write-Output "`$Array[$($Counter)] is $($Array[$Counter])`n"
     })
 
+    #Set our Parameters
     $Parameters = @{
-        Param1 = "Runspace_$($i)";
-        Param2 = $i;
-        Param3 = $HashTable;
-        Param4 = $x;
+        Counter = $i;
+        SyncHashTable = $SHashTable;
+        HashTable = $AHashTable;
+        Array = $Array;
     }
+
     [void]$PowerShell.AddParameters($Parameters)
 
     $Handle = $PowerShell.BeginInvoke()
-    
     $temp = '' | Select PowerShell,Handle
     $temp.PowerShell = $PowerShell
     $temp.handle = $Handle
@@ -85,6 +106,7 @@ for ($i = 0; $i -lt 5; $i++) {
     [void]$RunspacePool.GetAvailableRunspaces()
 }
 #endregion
+
     
 $return = foreach ($rs in $Spaces) {
     $Output = $rs.PowerShell.EndInvoke($rs.Handle)
